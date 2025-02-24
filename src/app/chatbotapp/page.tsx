@@ -1,3 +1,4 @@
+import "./ChatBotApp.css";
 export default function ChatBotApp() {
   return (
     <div className="chat-app">
