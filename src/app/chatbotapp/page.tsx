@@ -35,6 +35,24 @@ export default function ChatBotApp() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    const storedChats = JSON.parse(localStorage.getItem("chats") || "[]");
+    setChats(storedChats);
+
+    if (storedChats.length > 0) {
+      setActiveChat(storedChats[0].id);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeChat) {
+      const storedMessages = JSON.parse(
+        localStorage.getItem(activeChat) || "[]"
+      );
+      setMessages(storedMessages);
+    }
+  }, [activeChat]);
+
   function handleEmojiSelect(emoji: { native: string }) {
     setInputValue((prevInput) => prevInput + emoji.native);
   }
@@ -58,6 +76,7 @@ export default function ChatBotApp() {
     } else {
       const updatedMessages = [...messages, newMessage];
       setMessages(updatedMessages);
+      localStorage.setItem(activeChat, JSON.stringify(updatedMessages));
       setInputValue("");
 
       const updatedChats = chats.map((chat) => {
@@ -68,6 +87,7 @@ export default function ChatBotApp() {
       });
 
       setChats(updatedChats);
+      localStorage.setItem("chats", JSON.stringify(updatedChats));
       setIsTyping(true);
       const response = await fetch(
         "https://api.openai.com/v1/chat/completions",
@@ -96,6 +116,10 @@ export default function ChatBotApp() {
 
       const updatedMessagesWithResponse = [...updatedMessages, newResponse];
       setMessages(updatedMessagesWithResponse);
+      localStorage.setItem(
+        activeChat,
+        JSON.stringify(updatedMessagesWithResponse)
+      );
       setIsTyping(false);
 
       const updatedChatsWithResponse = chats.map((chat) => {
@@ -105,6 +129,7 @@ export default function ChatBotApp() {
         return chat;
       });
       setChats(updatedChatsWithResponse);
+      localStorage.setItem("chats", JSON.stringify(updatedChatsWithResponse));
     }
   }
 
@@ -134,6 +159,8 @@ export default function ChatBotApp() {
 
     const updatedChats = [newChat, ...chats];
     setChats(updatedChats);
+    localStorage.setItem("chats", JSON.stringify(updatedChats));
+    localStorage.setItem(newChat.id, JSON.stringify(newChat.messages));
     setActiveChat(newChat.id);
   }
 
@@ -155,6 +182,8 @@ export default function ChatBotApp() {
     if (id === activeChat) {
       const newActiveChat = updatedChats.length > 0 ? updatedChats[0].id : null;
       setActiveChat(newActiveChat);
+      localStorage.setItem("chats", JSON.stringify(updatedChats));
+      localStorage.removeItem(id);
     }
   }
 
