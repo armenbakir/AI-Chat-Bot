@@ -20,13 +20,14 @@ export default function ChatBotApp() {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Message[]>(chats[0]?.messages || []);
   const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     const activeChatObj = chats.find((chat) => chat.id === activeChat);
     setMessages(activeChatObj ? activeChatObj.messages : []);
   }, [activeChat, chats]);
 
-  function handleIputChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setInputValue(e.target.value);
   }
 
@@ -55,19 +56,22 @@ export default function ChatBotApp() {
       });
 
       setChats(updatedChats);
-
-      const response = await fetch("https://api.openai.com/v1/models", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer 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`,
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          message: [{ role: "user", content: inputValue }],
-          max_tokens: 500,
-        }),
-      });
+      setIsTyping(true);
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer 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`,
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: inputValue }],
+            max_tokens: 50,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -80,6 +84,7 @@ export default function ChatBotApp() {
 
       const updatedMessagesWithResponse = [...updatedMessages, newResponse];
       setMessages(updatedMessagesWithResponse);
+      setIsTyping(false);
 
       const updatedChatsWithResponse = chats.map((chat) => {
         if (chat.id === activeChat) {
@@ -187,8 +192,7 @@ export default function ChatBotApp() {
               <span>{msg.timestamp}</span>
             </div>
           ))}
-
-          <div className="typing">Typing...</div>
+          {isTyping && <div className="typing">Typing...</div>}
         </div>
         <form className="msg-form" onSubmit={(e) => e.preventDefault()}>
           <i className="fa-solid fa-face-smile emoji"></i>
@@ -197,7 +201,7 @@ export default function ChatBotApp() {
             className="msg-input"
             placeholder="Type a message..."
             value={inputValue}
-            onChange={handleIputChange}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
           />
           <i className="fa-solid fa-paper-plane" onClick={sendMessage}></i>
