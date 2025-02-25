@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 interface Message {
   type: string;
   text: string;
-  timeStamp: string;
+  timestamp: string;
 }
 
 interface Chat {
@@ -36,7 +36,7 @@ export default function ChatBotApp() {
     const newMessage = {
       type: "prompt",
       text: inputValue,
-      timeStamp: new Date().toLocaleTimeString(),
+      timestamp: new Date().toLocaleTimeString(),
     };
 
     if (!activeChat) {
@@ -56,23 +56,38 @@ export default function ChatBotApp() {
 
       setChats(updatedChats);
 
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            Authorisation: `Bearer ${process.env.OPENAI_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            message: [{ role: "user", content: inputValue }],
-            max_tokens: 500,
-          }),
-        }
-      );
+      const response = await fetch("https://api.openai.com/v1/models", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer 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`,
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          message: [{ role: "user", content: inputValue }],
+          max_tokens: 500,
+        }),
+      });
+
       const data = await response.json();
+
       const chatResponse = data.choices[0].message.content.trim();
+      const newResponse = {
+        type: "response",
+        text: chatResponse,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+
+      const updatedMessagesWithResponse = [...updatedMessages, newResponse];
+      setMessages(updatedMessagesWithResponse);
+
+      const updatedChatsWithResponse = chats.map((chat) => {
+        if (chat.id === activeChat) {
+          return { ...chat, messages: updatedMessagesWithResponse };
+        }
+        return chat;
+      });
+      setChats(updatedChatsWithResponse);
     }
   }
 
@@ -94,7 +109,7 @@ export default function ChatBotApp() {
             {
               type: "prompt",
               text: initialMessage,
-              timeStamp: new Date().toLocaleTimeString(),
+              timestamp: new Date().toLocaleTimeString(),
             },
           ]
         : [],
@@ -169,7 +184,7 @@ export default function ChatBotApp() {
               className={msg.type === "prompt" ? "prompt" : "response"}
             >
               {msg.text}
-              <span>{msg.timeStamp}</span>
+              <span>{msg.timestamp}</span>
             </div>
           ))}
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export default async function POST(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const { inputValue } = await request.json();
 
   const apiKey = process.env.OPENAI_API_KEY;
