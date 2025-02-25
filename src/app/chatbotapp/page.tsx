@@ -39,18 +39,23 @@ export default function ChatBotApp() {
       timeStamp: new Date().toLocaleTimeString(),
     };
 
-    const updatedMessages = [...messages, newMessage];
-    setMessages(updatedMessages);
-    setInputValue("");
+    if (!activeChat) {
+      createNewChat(inputValue);
+      setInputValue("");
+    } else {
+      const updatedMessages = [...messages, newMessage];
+      setMessages(updatedMessages);
+      setInputValue("");
 
-    const updatedChats = chats.map((chat) => {
-      if (chat.id === activeChat) {
-        return { ...chat, messages: updatedMessages };
-      }
-      return chat;
-    });
+      const updatedChats = chats.map((chat) => {
+        if (chat.id === activeChat) {
+          return { ...chat, messages: updatedMessages };
+        }
+        return chat;
+      });
 
-    setChats(updatedChats);
+      setChats(updatedChats);
+    }
   }
 
   // TODO(Armen) Behövs denna?
@@ -60,13 +65,21 @@ export default function ChatBotApp() {
     }
   }
 
-  function createNewChat() {
+  function createNewChat(initialMessage?: string) {
     const newChat = {
       id: uuidv4(),
       displayId: `Chat ${new Date().toLocaleDateString(
         "en-GB"
       )} ${new Date().toLocaleTimeString()}`,
-      messages: [],
+      messages: initialMessage
+        ? [
+            {
+              type: "prompt",
+              text: initialMessage,
+              timeStamp: new Date().toLocaleTimeString(),
+            },
+          ]
+        : [],
     };
 
     const updatedChats = [newChat, ...chats];
@@ -100,7 +113,10 @@ export default function ChatBotApp() {
       <div className="chat-list">
         <div className="chat-list-header">
           <h2>Chat List</h2>
-          <i className="bx bx-edit-alt new-chat" onClick={createNewChat}></i>
+          <i
+            className="bx bx-edit-alt new-chat"
+            onClick={() => createNewChat()}
+          ></i>
         </div>
         {chats.map((chat) => (
           <div
