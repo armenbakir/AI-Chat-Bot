@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
 import "./ChatBotApp.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
 
 interface Message {
   type: string;
@@ -21,11 +23,21 @@ export default function ChatBotApp() {
   const [messages, setMessages] = useState<Message[]>(chats[0]?.messages || []);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const activeChatObj = chats.find((chat) => chat.id === activeChat);
     setMessages(activeChatObj ? activeChatObj.messages : []);
   }, [activeChat, chats]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  function handleEmojiSelect(emoji: { native: string }) {
+    setInputValue((prevInput) => prevInput + emoji.native);
+  }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setInputValue(e.target.value);
@@ -193,9 +205,18 @@ export default function ChatBotApp() {
             </div>
           ))}
           {isTyping && <div className="typing">Typing...</div>}
+          <div ref={chatEndRef}></div>
         </div>
         <form className="msg-form" onSubmit={(e) => e.preventDefault()}>
-          <i className="fa-solid fa-face-smile emoji"></i>
+          <i
+            className="fa-solid fa-face-smile emoji"
+            onClick={() => setShowEmojiPicker((prev) => !prev)}
+          ></i>
+          {showEmojiPicker && (
+            <div className="picker">
+              <Picker data={data} onEmojiSelect={handleEmojiSelect} />
+            </div>
+          )}
           <input
             type="text"
             className="msg-input"
@@ -203,6 +224,7 @@ export default function ChatBotApp() {
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            onFocus={() => setShowEmojiPicker(false)}
           />
           <i className="fa-solid fa-paper-plane" onClick={sendMessage}></i>
         </form>
