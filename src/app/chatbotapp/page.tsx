@@ -30,7 +30,7 @@ export default function ChatBotApp() {
     setInputValue(e.target.value);
   }
 
-  function sendMessage() {
+  async function sendMessage() {
     if (inputValue.trim() === "") return;
 
     const newMessage = {
@@ -55,6 +55,24 @@ export default function ChatBotApp() {
       });
 
       setChats(updatedChats);
+
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            Authorisation: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            message: [{ role: "user", content: inputValue }],
+            max_tokens: 500,
+          }),
+        }
+      );
+      const data = await response.json();
+      const chatResponse = data.choices[0].message.content.trim();
     }
   }
 
