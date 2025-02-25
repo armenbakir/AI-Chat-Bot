@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import "./ChatBotApp.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Message {
   type: string;
@@ -17,7 +17,12 @@ export default function ChatBotApp() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Message[]>(chats[0]?.messages || []);
-  const [activeChat, setActiveChat] = useState(null);
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+
+  useEffect(() => {
+    const activeChatObj = chats.find((chat) => chat.id === activeChat);
+    setMessages(activeChatObj ? activeChatObj.messages : []);
+  }, [activeChat, chats]);
 
   function handleIputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setInputValue(e.target.value);
@@ -36,8 +41,8 @@ export default function ChatBotApp() {
     setMessages(updatedMessages);
     setInputValue("");
 
-    const updatedChats = chats.map((chat, index) => {
-      if (index === 0) {
+    const updatedChats = chats.map((chat) => {
+      if (chat.id === activeChat) {
         return { ...chat, messages: updatedMessages };
       }
       return chat;
@@ -49,14 +54,21 @@ export default function ChatBotApp() {
   // TODO(Armen) Behövs denna?
   function handleChat() {
     if (chats.length === 0) {
-      const newChat = {
-        id: `Chat ${new Date().toLocaleDateString(
-          "en-GB"
-        )} ${new Date().toLocaleDateString()}`,
-        messages: [],
-      };
-      setChats([newChat]);
+      createNewChat();
     }
+  }
+
+  function createNewChat() {
+    const newChat = {
+      id: `Chat ${new Date().toLocaleDateString(
+        "en-GB"
+      )} ${new Date().toLocaleDateString()}`,
+      messages: [],
+    };
+
+    const updatedChats = [newChat, ...chats];
+    setChats(updatedChats);
+    setActiveChat(newChat.id);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -64,6 +76,10 @@ export default function ChatBotApp() {
       e.preventDefault();
       sendMessage();
     }
+  }
+
+  function handleSelectChat(id: string) {
+    setActiveChat(id);
   }
 
   return (
