@@ -24,6 +24,7 @@ export default function ChatBotApp() {
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showChatList, setShowChatList] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -189,12 +190,16 @@ export default function ChatBotApp() {
 
   return (
     <div className="chat-app">
-      <div className="chat-list">
+      <div className={`chat-list ${showChatList ? "show" : ""}`}>
         <div className="chat-list-header">
           <h2>Chat List</h2>
           <i
             className="bx bx-edit-alt new-chat"
             onClick={() => createNewChat()}
+          ></i>
+          <i
+            className="bx bx-x close-list"
+            onClick={() => setShowChatList(false)}
           ></i>
         </div>
         {chats.map((chat) => (
@@ -219,6 +224,7 @@ export default function ChatBotApp() {
       <div className="chat-window">
         <div className="chat-title">
           <h3>Chat with AI</h3>
+          <i className="bx bx-menu" onClick={() => setShowChatList(true)}></i>
           <Link href="/">
             <i className="bx bx-arrow-back arrow"></i>
           </Link>
