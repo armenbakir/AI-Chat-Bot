@@ -2,6 +2,7 @@
 import Link from "next/link";
 import "./ChatBotApp.css";
 import { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 interface Message {
   type: string;
@@ -11,6 +12,7 @@ interface Message {
 
 interface Chat {
   id: string;
+  displayId: string;
   messages: Message[];
 }
 export default function ChatBotApp() {
@@ -60,9 +62,10 @@ export default function ChatBotApp() {
 
   function createNewChat() {
     const newChat = {
-      id: `Chat ${new Date().toLocaleDateString(
+      id: uuidv4(),
+      displayId: `Chat ${new Date().toLocaleDateString(
         "en-GB"
-      )} ${new Date().toLocaleDateString()}`,
+      )} ${new Date().toLocaleTimeString()}`,
       messages: [],
     };
 
@@ -82,20 +85,39 @@ export default function ChatBotApp() {
     setActiveChat(id);
   }
 
+  function handleDeleteChat(id: string) {
+    const updatedChats = chats.filter((chat) => chat.id !== id);
+    setChats(updatedChats);
+
+    if (id === activeChat) {
+      const newActiveChat = updatedChats.length > 0 ? updatedChats[0].id : null;
+      setActiveChat(newActiveChat);
+    }
+  }
+
   return (
     <div className="chat-app">
       <div className="chat-list">
         <div className="chat-list-header">
           <h2>Chat List</h2>
-          <i className="bx bx-edit-alt new-chat"></i>
+          <i className="bx bx-edit-alt new-chat" onClick={createNewChat}></i>
         </div>
-        {chats.map((chat, index) => (
+        {chats.map((chat) => (
           <div
-            key={index}
-            className={`chat-list-item ${index === 0 ? "active" : ""}`}
+            key={chat.id}
+            className={`chat-list-item ${
+              chat.id === activeChat ? "active" : ""
+            }`}
+            onClick={() => handleSelectChat(chat.id)}
           >
-            <h4>{chat.id}</h4>
-            <i className="bx bx-x"></i>
+            <h4>{chat.displayId}</h4>
+            <i
+              className="bx bx-x"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteChat(chat.id);
+              }}
+            ></i>
           </div>
         ))}
       </div>
