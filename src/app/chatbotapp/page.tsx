@@ -73,8 +73,47 @@ export default function ChatBotApp() {
     };
 
     if (!activeChat) {
-      createNewChat(inputValue);
+      const newChat = {
+        id: uuidv4(),
+        displayId: `Chat ${new Date().toLocaleDateString(
+          "en-GB"
+        )} ${new Date().toLocaleTimeString()}`,
+        messages: [newMessage],
+      };
+
+      const updatedChats = [newChat, ...chats];
+      setChats(updatedChats);
+      localStorage.setItem("chats", JSON.stringify(updatedChats));
+      localStorage.setItem(newChat.id, JSON.stringify(newChat.messages));
+      setActiveChat(newChat.id);
       setInputValue("");
+
+      setIsTyping(true);
+      const response = await chatService.sendMessage(inputValue);
+      const chatResponse = response.choices[0].message.content.trim();
+
+      const newResponse = {
+        type: "response",
+        text: chatResponse,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+
+      const updatedMessagesWithResponse = [...newChat.messages, newResponse];
+      setMessages(updatedMessagesWithResponse);
+      localStorage.setItem(
+        newChat.id,
+        JSON.stringify(updatedMessagesWithResponse)
+      );
+      setIsTyping(false);
+
+      const updatedChatsWithResponse = updatedChats.map((chat) => {
+        if (chat.id === newChat.id) {
+          return { ...chat, messages: updatedMessagesWithResponse };
+        }
+        return chat;
+      });
+      setChats(updatedChatsWithResponse);
+      localStorage.setItem("chats", JSON.stringify(updatedChatsWithResponse));
     } else {
       const updatedMessages = [...messages, newMessage];
       setMessages(updatedMessages);
@@ -117,13 +156,6 @@ export default function ChatBotApp() {
       });
       setChats(updatedChatsWithResponse);
       localStorage.setItem("chats", JSON.stringify(updatedChatsWithResponse));
-    }
-  }
-
-  // TODO(Armen) Behövs denna?
-  function handleChat() {
-    if (chats.length === 0) {
-      createNewChat();
     }
   }
 
