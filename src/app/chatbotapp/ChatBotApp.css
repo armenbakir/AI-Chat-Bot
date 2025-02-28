@@ -15,6 +15,7 @@
 }
 
 .chat-list-header {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 2rem);
   width: 100%;
   display: flex;
   align-items: center;
@@ -152,6 +153,7 @@
 }
 
 .msg-form {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
   width: 100%;
   min-height: 10rem;
   background-color: #161c2c;
