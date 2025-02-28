@@ -55,25 +55,22 @@ export default function ChatBotApp() {
     }
   }, [activeChat]);
 
-  function handleEmojiSelect(emoji: { native: string }) {
-    setInputValue((prevInput) => prevInput + emoji.native);
-  }
-
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setInputValue(e.target.value);
-  }
-
   async function sendMessage() {
     if (inputValue.trim() === "") return;
 
-    const newMessage = {
+    const messageText = inputValue;
+    const newMessage: Message = {
       type: "prompt",
-      text: inputValue,
+      text: messageText,
       timestamp: new Date().toLocaleTimeString(),
     };
 
+    let currentChatId = activeChat;
+    let currentMessages: Message[];
+    let chatsForResponse: Chat[];
+
     if (!activeChat) {
-      const newChat = {
+      const newChat: Chat = {
         id: uuidv4(),
         displayId: `Chat ${new Date().toLocaleDateString(
           "en-GB"
@@ -81,81 +78,56 @@ export default function ChatBotApp() {
         messages: [newMessage],
       };
 
-      const updatedChats = [newChat, ...chats];
-      setChats(updatedChats);
-      localStorage.setItem("chats", JSON.stringify(updatedChats));
+      currentChatId = newChat.id;
+      currentMessages = newChat.messages;
+      const newChats = [newChat, ...chats];
+      setChats(newChats);
+      localStorage.setItem("chats", JSON.stringify(newChats));
       localStorage.setItem(newChat.id, JSON.stringify(newChat.messages));
       setActiveChat(newChat.id);
-      setInputValue("");
+      chatsForResponse = newChats;
+    } else {
+      currentMessages = [...messages, newMessage];
+      localStorage.setItem(activeChat, JSON.stringify(currentMessages));
+      const newChats = chats.map((chat) =>
+        chat.id === activeChat ? { ...chat, messages: currentMessages } : chat
+      );
+      setChats(newChats);
+      localStorage.setItem("chats", JSON.stringify(newChats));
+      chatsForResponse = chats;
+    }
 
-      setIsTyping(true);
-      const response = await chatService.sendMessage(inputValue);
-      const chatResponse = response.choices[0].message.content.trim();
+    setMessages(currentMessages);
+    setInputValue("");
+    setIsTyping(true);
 
-      const newResponse = {
+    const response = await chatService.sendMessage(messageText);
+
+    if (response.text) {
+      const newResponse: Message = {
         type: "response",
-        text: chatResponse,
+        text: response.text,
         timestamp: new Date().toLocaleTimeString(),
       };
 
-      const updatedMessagesWithResponse = [...newChat.messages, newResponse];
-      setMessages(updatedMessagesWithResponse);
-      localStorage.setItem(
-        newChat.id,
-        JSON.stringify(updatedMessagesWithResponse)
-      );
+      const updatedMessages = [...currentMessages, newResponse];
+      setMessages(updatedMessages);
+      localStorage.setItem(currentChatId!, JSON.stringify(updatedMessages));
       setIsTyping(false);
 
-      const updatedChatsWithResponse = updatedChats.map((chat) => {
-        if (chat.id === newChat.id) {
-          return { ...chat, messages: updatedMessagesWithResponse };
-        }
-        return chat;
-      });
-      setChats(updatedChatsWithResponse);
-      localStorage.setItem("chats", JSON.stringify(updatedChatsWithResponse));
-    } else {
-      const updatedMessages = [...messages, newMessage];
-      setMessages(updatedMessages);
-      localStorage.setItem(activeChat, JSON.stringify(updatedMessages));
-      setInputValue("");
+      if (response.audio) {
+        const audioSrc = `data:audio/mpeg;base64,${response.audio}`;
+        const audio = new Audio(audioSrc);
+        audio.play();
+      }
 
-      const updatedChats = chats.map((chat) => {
-        if (chat.id === activeChat) {
-          return { ...chat, messages: updatedMessages };
-        }
-        return chat;
-      });
-
+      const updatedChats = chatsForResponse.map((chat) =>
+        chat.id === currentChatId
+          ? { ...chat, messages: updatedMessages }
+          : chat
+      );
       setChats(updatedChats);
       localStorage.setItem("chats", JSON.stringify(updatedChats));
-      setIsTyping(true);
-
-      const response = await chatService.sendMessage(inputValue);
-      const chatResponse = response.choices[0].message.content.trim();
-
-      const newResponse = {
-        type: "response",
-        text: chatResponse,
-        timestamp: new Date().toLocaleTimeString(),
-      };
-
-      const updatedMessagesWithResponse = [...updatedMessages, newResponse];
-      setMessages(updatedMessagesWithResponse);
-      localStorage.setItem(
-        activeChat,
-        JSON.stringify(updatedMessagesWithResponse)
-      );
-      setIsTyping(false);
-
-      const updatedChatsWithResponse = chats.map((chat) => {
-        if (chat.id === activeChat) {
-          return { ...chat, messages: updatedMessagesWithResponse };
-        }
-        return chat;
-      });
-      setChats(updatedChatsWithResponse);
-      localStorage.setItem("chats", JSON.stringify(updatedChatsWithResponse));
     }
   }
 
@@ -181,6 +153,14 @@ export default function ChatBotApp() {
     localStorage.setItem("chats", JSON.stringify(updatedChats));
     localStorage.setItem(newChat.id, JSON.stringify(newChat.messages));
     setActiveChat(newChat.id);
+  }
+
+  function handleEmojiSelect(emoji: { native: string }) {
+    setInputValue((prevInput) => prevInput + emoji.native);
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setInputValue(e.target.value);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
